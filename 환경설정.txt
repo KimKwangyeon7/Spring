@@ -1,0 +1,86 @@
+## web.xml
+1. DispatcherServlet 설정
+
+2. 최상위 Root ContextLoader 설정. Context 설정 파일들을 로드하기 위해 리스너 설정
+=> 리스너 설정이 되면 /WEB-INF/spring/root-context.sml 파일을 읽어서 공통적으로 사용되는 최상위 Context를 생성
+<listener>							  <listener-class>org.springframework.web.context.   ContextLoaderListener </listener-class>
+</listener>
+
+
+3. 그 외 다른 컨텍스트 파일들을 최상위 어플리케이션 컨텍스트에 로드하기
+<context-param>
+	<param-name>contextConfigLocation</param-name>
+	<param-value>/WEB-INF/spring/root-context.xml</param-value>
+</context-param>
+
+ 
+4. POST 방식의 한글 처리
+<filter>
+	<filter-name>encodingFilter</filter-name>
+	<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+	<init-param>
+	  <param-name>encoding</param-name>
+	  <param-value>UTF-8</param-value>
+	</init-param>
+</filter>
+     
+<filter-mapping>
+	<filter-name>encodingFilter</filter-name>
+	<url-pattern>/*</url-pattern>
+</filter-mapping>
+
+
+## root-context.xml
+1. dto와 service가 다 포함돼야 함
+<context:component-scan base-package="com.ssafy.*.model"/>
+
+ 
+2. mybatis에서 제공하는 scan 태그를 통해 repository(Mapper) interface들의 위치를 지정
+<mybatis-spring:scan base-package="com.ssafy.*.model.mapper"/>
+
+
+3. DataSource 설정. ConnectionPool 설정
+<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+	<property name="jndiName" value="java:comp/env/jdbc/ssafy"></property>
+</bean>
+
+
+4. 트랜잭션 관리자 설정
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<property name="dataSource" ref="dataSource" />
+</bean>
+
+
+5. 어노테이션 기반 트랜잭션 설정
+<tx:annotation-driven transaction-manager="transactionManager"/ >
+
+
+6. SqlSessionFactoryBean 설정. SqlSessionFactoryBean을 빈으로 등록할 때, 사용할 데이터소스와 mybatis 설정파일 정보 필요
+<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+	<property name="dataSource" ref="dataSource"/>
+	<property name="typeAliasesPackage" value="com.ssafy.*.model"/>
+	<property name="mapperLocations" value="classpath:mapper/*.xml"/>
+</bean>
+
+
+## servlet-context.xml
+1. controller class 자동 스캔 => @Controller 어노테이션 -> 자동 스캔 대상
+<context:component-scan base-package="com.ssafy.*.controller" />
+
+
+2. view 지정 => ViewResolver: 논리적 view와 실제 jsp파일 mapping
+<beans:bean class= "org.springframework.web.servlet.view.InternalResourceViewResolver">
+	<beans:property name="prefix" value="/WEB-INF/views/" />
+	<beans:property name="suffix" value=".jsp" />
+</beans:bean>
+
+
+3. css, js, html 등 파일 위치 설정
+<resources mapping="/resources/**" location="/resources/" />
+
+
+4. Controller와 response page 연결을 위한 ViewResolver 설정
+<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
